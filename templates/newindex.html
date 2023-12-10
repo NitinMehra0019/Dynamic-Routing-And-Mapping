@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>OpenStreetMap Example - India</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 750px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="coordinates"></div>
+
+<div>
+    <label for="sourceAddress">Source Address:</label>
+    <input type="text" id="sourceAddress" placeholder="Enter source address">
+</div>
+<div>
+    <label for="destAddress">Destination Address:</label>
+    <input type="text" id="destAddress" placeholder="Enter destination address">
+</div>
+<div>
+    <label for="sourceLat">Source Latitude:</label>
+    <input type="text" id="sourceLat" placeholder="Enter source latitude">
+</div>
+<div>
+    <label for="sourceLon">Source Longitude:</label>
+    <input type="text" id="sourceLon" placeholder="Enter source longitude">
+</div>
+<div>
+    <label for="destLat">Destination Latitude:</label>
+    <input type="text" id="destLat" placeholder="Enter destination latitude">
+</div>
+<div>
+    <label for="destLon">Destination Longitude:</label>
+    <input type="text" id="destLon" placeholder="Enter destination longitude">
+</div>
+<button onclick="sendCoordinates()">Send Coordinates</button>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    // Set the initial view to focus on India
+    const initialView = {
+        center: [20.5937, 78.9629], // India's coordinates
+        zoom: 15
+    };
+
+    // Bounding box data
+    const boundingBox = {
+        minlat: 28.5535000,
+        minlon: 77.2018000,
+        maxlat: 28.5789000,
+        maxlon: 77.2383000
+    };
+
+    // Check whether the coordinates are inside the bounding Box
+    function is_inside_bounding_box(latitude, longitude) {
+        const minlat = 28.5535000;
+        const minlon = 77.2018000;
+        const maxlat = 28.5789000;
+        const maxlon = 77.2383000;
+
+        return (
+            latitude >= minlat &&
+            latitude <= maxlat &&
+            longitude >= minlon &&
+            longitude <= maxlon
+        );
+    }
+
+    // Initialize the map
+    const map = L.map('map', {
+        center: initialView.center,
+        zoom: initialView.zoom,
+        maxBounds: L.latLngBounds(
+            [boundingBox.minlat, boundingBox.minlon],
+            [boundingBox.maxlat, boundingBox.maxlon]
+        ) // Set bounds based on the provided data
+    });
+
+    // Add a tile layer from OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let isSource = true; // Flag to track whether to update source or destination fields
+
+    // Add a click event listener to the map
+    map.on('click', function (event) {
+        // Get the clicked coordinates
+        const latlng = event.latlng;
+
+        // Display the coordinates
+        document.getElementById('coordinates').innerHTML = `Latitude: ${latlng.lat.toFixed(10)}, Longitude: ${latlng.lng.toFixed(10)}`;
+        // Update the input fields based on the flag
+        if (isSource) {
+            document.getElementById('sourceLat').value = latlng.lat.toFixed(10);
+            document.getElementById('sourceLon').value = latlng.lng.toFixed(10);
+        } else {
+            document.getElementById('destLat').value = latlng.lat.toFixed(10);
+            document.getElementById('destLon').value = latlng.lng.toFixed(10);
+        }
+        // Marker when clicked 
+        L.marker(latlng).addTo(map);
+
+        // Toggle the flag for the next click
+        isSource = !isSource;
+
+        // Add the clicked point to the polyline polyline.addLatLng(latlng);
+    });
+
+    // Create a rectangle overlay for the bounding box
+    const boundingBoxRectangle = L.rectangle([
+        [boundingBox.minlat, boundingBox.minlon],
+        [boundingBox.maxlat, boundingBox.maxlon]
+    ], { color: '#FF0000', weight: 2, fillOpacity: 0.01 }).addTo(map);
+
+    // Example polyline coordinates (replace with your own)
+    const polylineCoordinates = [
+        // [20.5937, 78.9629],
+        // [19.0760, 72.8777],
+        // [28.6139, 77.2090],
+        // [12.9716, 77.5946]
+    ];
+
+    // Create a polyline with the example coordinates
+    const polyline = L.polyline(polylineCoordinates, { color: 'red' }).addTo(map);
+
+    // Add an event listener for the "change" event on the source address input field
+    document.getElementById('sourceAddress').addEventListener('change', function () {
+        // Trigger the geocoding process and update the corresponding latitude and longitude fields
+        geocodeAndUpdate('source');
+    });
+
+    document.getElementById('destAddress').addEventListener('keydown', function (event) {
+        // Trigger the geocoding process and update the corresponding latitude and longitude fields
+        if (event.keyCode === 13) {
+            geocodeAndUpdate('dest');
+        }
+
+    
+    });
+
+    // Function to geocode the address and update the corresponding latitude and longitude fields
+    function geocodeAndUpdate(type) {
+        const addressElement = document.getElementById(`${type}Address`);
+        const latElement = document.getElementById(`${type}Lat`);
+        const lonElement = document.getElementById(`${type}Lon`);
+    
+        const address = addressElement.value;
+    
+        // Geocode the address
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json`)
+            .then(response => response.json())
+            .then(data => {
+                console.log(`Geocoding result for ${type}:`, data);
+    
+                if (data.length === 0) {
+                    alert(`No result found for ${type} address.`);
+                    return;
+                }
+    
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+    
+                // Log the bounding box details
+                console.log(`Bounding Box: [${boundingBox.minlat}, ${boundingBox.minlon}] to [${boundingBox.maxlat}, ${boundingBox.maxlon}]`);
+                console.log(`Checking ${type} coordinates - Latitude: ${lat}, Longitude: ${lon}`);
+    
+                if (!is_inside_bounding_box(lat, lon)) {
+                    alert(`${type} coordinates are outside the bounding box.`);
+                    return;
+                }
+    
+                // Update the latitude and longitude fields
+                latElement.value = lat.toFixed(10);
+                lonElement.value = lon.toFixed(10);
+    
+                // Display the marker on the map
+                L.marker([lat, lon]).addTo(map);
+            })
+            .catch(error => console.error('Error during geocoding:', error));
+    }
+
+    function sendCoordinates() {
+        // Get the coordinates from the input fields
+        const sourceAddress = document.getElementById('sourceAddress').value;
+        const destAddress = document.getElementById('destAddress').value;
+
+        // Geocode source address
+        geocodeAndUpdate('source');
+
+        // Geocode destination address
+        geocodeAndUpdate('dest');
+
+        // Send the coordinates to the backend for data processing
+        fetch('/process_coordinates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                sourceLat: parseFloat(document.getElementById('sourceLat').value),
+                sourceLon: parseFloat(document.getElementById('sourceLon').value),
+                destLat: parseFloat(document.getElementById('destLat').value),
+                destLon: parseFloat(document.getElementById('destLon').value)
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            // Draw the polyline on the map
+            const pathCoordinates = data.path;
+            console.log('Path Coordinates:', pathCoordinates);
+
+            const pathPolyline = L.polyline(pathCoordinates, { color: 'blue' }).addTo(map);
+            map.fitBounds(pathPolyline.getBounds());
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+
+</script>
+
+</body>
+</html>
