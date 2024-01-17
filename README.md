@@ -17,13 +17,8 @@ Do all this inside virtual environment\
 Run the code : python ./app.py\
 It will run on localhost 5000 port\
 
-# Snapshot
-![routing](https://github.com/NitinMehra0019/Routing-Algorithm/assets/84515402/86291ec0-aee5-4c2f-8946-65c882a85c88)
+![Screenshot from 2024-01-17 10-11-42](https://github.com/NitinMehra0019/Dynamic-Routing-And-Mapping/assets/84515402/bf3400a3-ecc9-4b70-8811-40807637bbd0)
 
-# Video
-
-
-https://github.com/NitinMehra0019/Routing-Algorithm/assets/84515402/7e3c5a04-d508-42da-842b-da4096353a83
 
 
 
