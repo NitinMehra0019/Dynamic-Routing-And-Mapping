@@ -12,7 +12,7 @@ This web application is designed to provide route planning functionality using t
 **Clone the Repository:** Clone this repository to your local machine.
 
 ```bash
-git clone https://git.jangoo.us:3010/Jangoo/Routing.git
+https://github.com/NitinMehra0019/Dynamic-Routing-And-Mapping.git
 ```
 **Build virtual environment**
 ```bash
@@ -58,6 +58,14 @@ Open terminal and run below command
 ```bash
 python ./valhalla.py
 ```
+
+## Architecture Diagram
+![map](https://github.com/NitinMehra0019/Dynamic-Routing-And-Mapping/assets/84515402/37eb7ee8-b066-4b1d-b79a-711acfa72e14)
+
+Link to tech stack doc : [Tech statck Doc](https://drive.google.com/file/d/1u7xB7V71RALhngYwVXjdgTsBiRLa55fu/view?usp=sharing)
+
+Link to video in which GPS data is integrated : [Video](https://drive.google.com/file/d/1XTwU49nhMbhl85bosQ66gIvOMrr1ilj7/view?usp=sharing)
+
 **Input Address:** On the homepage of the web application, enter the source and destination coordinates in the provided input fields.
 
 **Submit Request:** Click on the "Direction" button to submit the request.
@@ -67,7 +75,6 @@ python ./valhalla.py
 <a href="https://ibb.co/6Rsvm6P"><img src="https://i.ibb.co/99YwNRT/Screenshot-from-2024-02-20-15-53-11.png" alt="Screenshot-from-2024-02-20-15-53-11" border="0"></a>
 
 <a href="https://ibb.co/jwzzxMj"><img src="https://i.ibb.co/09KKWMz/Screenshot-from-2024-02-20-16-02-14.png" alt="Screenshot-from-2024-02-20-16-02-14" border="0"></a>
-Collapse
 
 
 
