@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <title>OpenStreetMap Example - Geocoding</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+      <!-- overflow: hidden; /* Prevent Scrolling -->
+      <style>
+           body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden; /* Hide horizontal scrollbar on smaller screens */
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add shadow for better visual */
+            position: fixed; /* Fixed header */
+            width: 100%; /* Full width */
+            z-index: 1000; /* Ensure header stays on top of other content */
+        }
+
+        .input-container {
+            display: flex;
+            flex-wrap: wrap; /* Allow elements to wrap to the next line on smaller screens */
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background-color: #f0f0f0;
+            margin-top: 60px; /* Adjust margin to accommodate fixed header */
+        }
+
+        .map-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 800px; /* Set initial height for map */
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        input {
+            margin-bottom: 10px; /* Add some space between input elements */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            width: calc(50% - 20px); /* Adjust width to fit two inputs in a row */
+            max-width: 300px; /* Limit max width for larger screens */
+        }
+
+        button {
+            margin-bottom: 10px; /* Add some space between button elements */
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: calc(50% - 20px); /* Adjust width to fit two buttons in a row */
+            max-width: 300px; /* Limit max width for larger screens */
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+      </style>
+   </head>
+   <body>
+      <div class="map-container">
+         <!--<div id="rotatable-map"> -->
+         <div id="map"></div>
+      </div>
+      </div>
+      <div class="input-container">
+         <label for="startAddress">Start Address:</label>
+         <input type="text" id="startAddress" placeholder="Choose starting point">
+         <button id= "location" onclick="getGeolocation()">Get Current Location</button>
+         <h1></h1>
+         <p id="locationData"></p>
+         <label for="endAddress">End Address:</label>
+         <input type="text" id="endAddress" placeholder="Choose destination">
+         <button onclick="directions()">Directions</button>
+         <!-- <button onclick="gettraffic()">Traffic </button> -->
+         <div id="shortestDistance">Distance : </div>
+         <div id="time">Time : </div>
+       
+      </div>
+     <!-- <div id="instructions-container">
+         <h3>Instructions:</h3>
+         <ul id="instructions-list"></ul>
+      </div>
+    -->
+      <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+      <script>
+         const map = L.map('map').setView([28.7041, 77.1025], 12);
+         
+         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+             attribution: '© OpenStreetMap contributors'
+         }).addTo(map);
+         
+         
+         /*const startIcon = L.icon({
+             iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png', // Replace with the URL to your custom start marker icon
+             iconSize: [38, 95],
+             iconAnchor: [22, 94],
+             popupAnchor: [-3, -76],
+         });
+         */
+
+         var greenIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                //shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+             var redIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                //shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+         
+         const endIcon = L.icon({
+             iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png', // Replace with the URL to your custom end marker icon
+             iconSize: [38, 95],
+             iconAnchor: [22, 94],
+             popupAnchor: [-3, -76],
+         });
+         
+         
+         // to get current marker position
+         function centerLeafletMapOnMarker(map, marker) {
+             var latLngs = [ marker.getLatLng() ];
+             var markerBounds = L.latLngBounds(latLngs);
+             map.fitBounds(markerBounds);
+           }
+         
+         
+         
+         var getCurrentLocationCalled = false;
+         
+         // Function for getting the current Location of user
+         function getGeolocation(){
+             getCurrentLocationCalled = true;
+
+             // Old browser are not Compaitable for this service
+             if(!navigator.geolocation){
+                 console.log("Browser Not Compaitable");
+             }
+             else{
+                 navigator.geolocation.getCurrentPosition(getPosition);
+         
+             }
+         }
+         
+         // Function to extract the information need from the below Structure
+
+         /* 
+         GeolocationPositioncoords: GeolocationCoordinatesaccuracy: 17.127
+         altitude: null
+         altitudeAccuracy: null
+         heading: null
+         latitude: 28.4832428
+         longitude: 77.1044168
+         speed: null
+         [[Prototype]]: GeolocationCoordinates
+         timestamp: 1708061729187
+         [[Prototype]]: GeolocationPosition
+         */
+
+         function getPosition(position){
+            console.log("Inside Get POsition function");
+             console.log(position);
+             var latitude = position.coords.latitude;
+             var longitude = position.coords.longitude;
+             var accuracy = position.coords.accuracy;
+             document.getElementById('startAddress').value = `${latitude}, ${longitude}`;
+            
+             // Adding marker and circle of accuracy of current location on Map 
+             var marker = L.marker([latitude, longitude], {icon: greenIcon});
+             var circle = L.circle([latitude, longitude], {radius: accuracy});
+         
+             var featureGroup = L.featureGroup([marker, circle]).addTo(map);
+             map.fitBounds(featureGroup.getBounds());
+         
+         }
+         
+         // Function to recentre the Map (Not using right now)
+         function recenterMap() {
+             // Get the marker's position
+             var markerLatLng = L.latLng(document.getElementById('startAddress').value.split(',').map(coord => parseFloat(coord.trim())));
+         
+             // Center the map on the marker's position
+             map.panTo(markerLatLng);
+         }
+         
+         
+         // Function to send the soruce and destination coordinate to the server and recieve the response.
+         function directions() {
+             const startAddress = document.getElementById('startAddress').value;
+             console.log("start adress" , startAddress);
+             const endAddress = document.getElementById('endAddress').value;
+            
+             // Coordinates from the geolocation()
+             const startCoordinates = startAddress.split(',').map(coord => parseFloat(coord.trim()));
+             console.log(startCoordinates);
+         
+             var sourceLat;
+             var sourceLon;
+             if(!getCurrentLocationCalled){
+
+                
+                // Geocoding Api called for get the coodinates form Address
+                 fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(startAddress)}&format=json`)
+                 .then(response => response.json())
+                 .then(data => {
+                     sourceLat = parseFloat(data[0].lat);
+                     console.log("source lat ", sourceLat)
+                     sourceLon = parseFloat(data[0].lon);
+                     console.log("source lon ", sourceLon)
+                     console.log("Nominatim for Start address is called")
+             }).catch(error => console.error('Error:', error));
+         }
+             else{
+                 sourceLat = startCoordinates[0];
+                 sourceLon = startCoordinates[1];
+             }
+         
+         
+                     fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(endAddress)}&format=json`)
+                         .then(response => response.json())
+                         .then(data => {
+                             const destLat = parseFloat(data[0].lat);
+                             const destLon = parseFloat(data[0].lon);
+                            
+                            // Add marker to the start and end position
+                             const startMarker = L.marker([sourceLat, sourceLon], {icon: greenIcon}).addTo(map);
+                             const endMarker = L.marker([destLat, destLon], {icon:redIcon}).addTo(map);        
+                          
+         
+         
+                             fetch('/process_coordinates', {
+                                 method: 'POST',
+                                 headers: {
+                                     'Content-Type': 'application/json',
+                                 },
+                                 body: JSON.stringify({
+                                     sourceLat: sourceLat,
+                                     sourceLon: sourceLon,
+                                     destLat: destLat,
+                                     destLon: destLon
+                                 }),
+                             })
+                             .then(response => response.json())
+                             .then(data => { // recieve response back from server
+                                 const pathCoordinates = data.path;
+                                 
+
+                                // For debugging
+                                 map.eachLayer(layer => {
+                                     if (layer instanceof L.CircleMarker) {
+                                         map.removeLayer(layer);
+                                     }
+                                 });
+                                 let traveledPathPolyline; // To make the travalled path
+
+                                 // Path from the coordinates obtained from server 
+                                 const pathPolyline = L.polyline(pathCoordinates, {color: '#0F53FF' ,weight: 8}).addTo(map);
+                                 map.fitBounds(pathPolyline.getBounds());
+                                 //map.setZoom(18);
+         
+                                 traveledPathPolyline = L.polyline([], { color: '#F1C40F', weight: 8 }).addTo(map);
+                                
+                           
+                                 //const animatedMarker = L.marker([]).addTo(map);
+                                 
+                                /* New Line */
+         
+                                 // Set the map view to follow the marker's position
+                                 map.setView(pathCoordinates[0], 15); // Adjust the zoom level as needed
+         
+         
+         
+                                 const updateInterval = 1000; // Interval for marker moving on the path
+                                 const updateGeoLocation = 200; // for getting current Location in every 20 ms 
+
+                                 // Marking time in format of hh::mm
+                                 const timeInSeconds = data.time;
+                                 const hours = Math.floor(timeInSeconds / 3600);
+                                 const minutes = Math.floor((timeInSeconds % 3600) / 60);
+                                 const formattedTime = hours > 0 ? `${hours} hr ${minutes} min` : `${minutes} min`;
+         
+                                 document.getElementById('time').innerHTML = `Time: ${formattedTime}`;
+         
+                                 const distance = data.distance;
+                                 document.getElementById('shortestDistance').innerHTML = `Distance: ${distance.toFixed(2)} km`;
+         
+                                 const instruction = data.instruction;
+                                 let i = 1;
+                                 
+                                 // Function to dislay insturction as marker move
+                                 function displayInstructions(instruction, sourceLat, sourceLon, currentIndex) {
+                                 
+                                     let display_marker = L.marker([sourceLat, sourceLon]).addTo(map);
+                                  
+         
+                                     const instructionsList = document.getElementById('instructions-list');
+         
+                                     instructionsList.innerHTML = '';
+                                     const listItem = document.createElement('li');
+                                     listItem.textContent = instruction.instruction;
+                                     instructionsList.appendChild(listItem);
+                                     
+                                     if (instruction.verbal_post_transition_instruction) {
+                                         const postTransitionItem = document.createElement('li');
+                                         postTransitionItem.textContent = instruction.verbal_post_transition_instruction;
+                                         instructionsList.appendChild(postTransitionItem);
+                                     }
+                                 }
+                                 
+                                
+                                 // Function to calculate diatnce between 2 pair of coordinates
+                                 function calculateDistance(lat1, lon1, lat2, lon2) {
+                                     const R = 6371;
+                                     const dLat = (lat2 - lat1) * (Math.PI / 180);
+                                     const dLon = (lon2 - lon1) * (Math.PI / 180);
+                                     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                                               Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                                     const distance = R * c;
+         
+                                     var round = parseFloat(distance.toFixed(3));
+         
+                                     return distance;
+                                 }
+                                 
+                                 // to track the distance travelled by marker
+                                 let totalDistanceTraveled = 0;
+
+                                 // Track which instructions are displayed so far
+                                 let instructionIndex = 0;
+                                 let distanceReqForNextInst=0;
+                                 let currentManeuverIndex = 0;
+                                 
+                                 // Current position of the marker
+                                 let currentIndex = 0;
+                                 let coordinateIndex = 0;
+                                 var marker, circle;
+                                 
+
+                                 // Function to update the current position of user in very 20 ms
+                                   function updateMarkerPosition() {
+                                                if (navigator.geolocation) {
+                                                    navigator.geolocation.getCurrentPosition(function(position) {
+                                                        
+                                                        // If marker is present then remove
+                                                        if(marker){
+                                                            //console.log("Inside remoce marker");
+
+                                                            map.removeLayer(marker);
+                                                        }
+                                                        if(circle){
+                                                            console.log("Inside remove circle");
+
+                                                            map.removeLayer(circle);
+                                                        }
+                                                        const gpsLatitude = position.coords.latitude;
+                                                        const gpsLongitude =position.coords.longitude;
+                                                        
+                                                        marker = L.marker([gpsLatitude, gpsLongitude]).addTo(map);
+
+                                                        console.log("GPS latiude", gpsLatitude, "GPS Longitude", gpsLongitude)
+
+                                                        //circle = L.circle([position.coords.latitude, position.coords.longitude], {
+                                                        //radius: position.coords.accuracy
+                                                        //}).addTo(map);
+
+                                                        //const currentLocation = [position.coords.latitude, position.coords.longitude];
+                                                        //console.log(" currentLocation : ", currentLocation);
+                                                        //traveledPathPolyline.setLatLngs([]);
+
+                                                        //console.log("Inside Update Marker Position function ");
+                                                        //traveledPathPolyline.addLatLng([position.coords.latitude, position.coords.longitude]);
+
+                                                        //Add coordinates the travelled path 
+                                                        traveledPathPolyline.addLatLng([gpsLatitude, gpsLongitude]);
+
+                                                        //traveledPathPolyline.addLatLng(currentLocation);
+                                                      //  const coordinate = traveledPathPolyline.getLatLngs();
+                                                        //console.log("travelled Path coordinate : ", coordinate);
+                                                        //console.log(traveledPathPolyline);
+
+                                                    });
+                                                } else {
+                                                    console.log("Geolocation is not supported by this browser.");
+                                                }
+                                            }
+
+         
+         
+                                 function difference(distance1, distance2){
+                                     const diff = Math.abs(distance2 - distance1);
+                                     return diff < 0.5;
+                                 }
+         
+                                 
+                                 /* function updateInstruction() {
+                                    
+                                     if (currentIndex < pathCoordinates.length) {
+                                         let beginIndex = instruction[currentManeuverIndex].begin_shape_index;
+                                         let endIndex = instruction[currentManeuverIndex].end_shape_index;
+         
+         
+                                         if(currentIndex == beginIndex){
+                                             displayInstructions(instruction[currentManeuverIndex], pathCoordinates[currentIndex][0], pathCoordinates[currentIndex][1], currentIndex);
+                                             currentIndex++;
+                                         }
+         
+                                         else if(currentIndex == endIndex){
+                                             displayInstructions(instruction[currentManeuverIndex+1],pathCoordinates[currentIndex][0], pathCoordinates[currentIndex][1], currentIndex);
+                                             currentManeuverIndex++;
+                                             currentIndex++;
+         
+                                         }
+                                         else {
+                                             currentIndex++;
+                                         }
+                                         
+                                     }
+                                     else{
+         
+                                     clearInterval(markerPosition);
+                                     clearInterval(instructionMarker);
+                                     }
+                             }
+                             */
+                                 const traffic_data = data.traffic;
+                                 console.log("Traffic : ", traffic_data);
+                                 /*
+                                 Intervals:
+         
+                                             Two intervals are set using setInterval:
+                                             One for updating the marker's position based on the animation interval.
+                                             Another for updating the marker's position and displaying instructions based on distance traveled.
+                                 */
+         
+                                 
+                                 //const instructionMarker = setInterval(updateInstruction, updateInterval);
+
+
+                                 // Set inteval to update the given function in the give time
+                                 const markerUpdate = setInterval(updateMarkerPosition, updateGeoLocation);
+                             })
+                             .catch((error) => {
+                                 console.error('Error: ', error);
+                             });
+                         })
+                         .catch(error => console.error('Error:', error));
+                
+         }
+      </script>
+   </body>
+</html>
