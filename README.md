@@ -1,5 +1,3 @@
-# Dynamic Routing and Mapping
-
 # Dynamic Routing Web Application
 This web application is designed to provide route planning functionality using the OpenStreetMap data and Valhalla routing engine. It allows users to input their source and destination addresses, and it returns the route information including the path visualisation, distance, time, and turn-by-turn instructions.
 
