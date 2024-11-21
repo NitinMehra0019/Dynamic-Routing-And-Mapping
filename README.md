@@ -50,9 +50,6 @@ CMake: Make sure you have CMake installed on your system. You can install it usi
 GCC/G++: Ensure that you have a C++ compiler installed on your system (e.g., gcc, g++).\
 Boost Libraries: Valhalla requires Boost libraries. You can install them using your package manager.
 
-## Installation Steps
-Check out [Valhalla installation part 1](https://wiki.jangoo.us:3443/en/jangoo/Dynamic_Routing/Valhalla_Install/Valhalla_install_part_1) and [Valhalla installation part 2](https://wiki.jangoo.us:3443/en/jangoo/Dynamic_Routing/Valhalla_Install/Valhalla_install_part_2).
-
 ## Usage
 Open terminal and run below command
 ```bash
